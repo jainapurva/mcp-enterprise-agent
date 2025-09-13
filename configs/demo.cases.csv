@@ -1,0 +1,7 @@
+case_id,customer_email,description,priority,status,created_date,assigned_agent
+CASE-001,john.doe@email.com,Order delivery delayed beyond expected date,high,open,2024-01-10,agent-sarah
+CASE-002,jane.smith@email.com,Defective product received - screen has dead pixels,medium,in_progress,2024-01-11,agent-mike
+CASE-003,bob.wilson@email.com,Wrong item shipped - ordered blue but received red,low,resolved,2024-01-09,agent-lisa
+CASE-004,alice.brown@email.com,Payment charged twice for same order,high,open,2024-01-12,agent-tom
+CASE-005,charlie.davis@email.com,Unable to cancel order after placement,medium,resolved,2024-01-08,agent-sarah
+CASE-006,diana.miller@email.com,Product not as described in listing,low,open,2024-01-13,agent-mike

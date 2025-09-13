@@ -1,0 +1,95 @@
+company:
+  name: "Acme Corp"
+  languages: ["en-US"]
+  voice_style: "friendly, concise"
+
+policy:
+  pii_collect: ["email", "order_id"]
+  pii_mask_in_logs: ["email"]
+  otp_required_for: ["address_change"]
+  confidence_threshold: 0.6
+  escalation:
+    strategy: "warm_transfer"
+    phone_number: "+14155550101"
+
+knowledge_base:
+  docs:
+    - title: "Support Hours"
+      text: "We operate Mon–Fri, 8am–6pm PT. Emergencies 24/7."
+    - title: "Return Policy"
+      text: "Returns accepted within 30 days of purchase with original receipt."
+    - title: "Shipping Information"
+      text: "Standard shipping takes 3-5 business days. Express shipping available for next-day delivery."
+
+resources:
+  - name: "orders"
+    type: "csv"
+    source: "./configs/demo.orders.csv"
+    operations:
+      lookup:
+        mode: "filter"
+        by: ["order_id"]
+        map:
+          status: "$.status"
+          eta: "$.eta"
+          tracking_url: "$.tracking_url"
+      update:
+        mode: "update"
+        by: ["order_id"]
+        fields: ["status", "address", "eta"]
+
+  - name: "cases"
+    type: "csv"
+    source: "./configs/demo.cases.csv"
+    operations:
+      lookup:
+        mode: "filter"
+        by: ["case_id", "email"]
+        map:
+          status: "$.status"
+          priority: "$.priority"
+          description: "$.description"
+      create:
+        mode: "append"
+        auto_id: "case_id"
+        fields: ["email", "description", "priority", "status"]
+
+routing:
+  intents:
+    - name: "faq"
+      when: ["hours", "policy", "help", "support", "return", "shipping"]
+      tool: "kb.search"
+      collect: []
+      otp_required: false
+
+    - name: "order_status"
+      when: ["order", "status", "track", "tracking"]
+      tool: "resource.query"
+      with: { resource: "orders", operation: "lookup" }
+      collect: ["order_id"]
+      otp_required: false
+
+    - name: "change_address"
+      when: ["address", "change", "update"]
+      tool: "resource.query"
+      with: { resource: "orders", operation: "update" }
+      collect: ["email", "order_id"]
+      otp_required: true
+
+    - name: "create_case"
+      when: ["issue", "problem", "complaint", "case"]
+      tool: "case.create"
+      collect: ["email", "description"]
+      otp_required: false
+
+    - name: "lookup_case"
+      when: ["case", "status", "ticket"]
+      tool: "case.lookup"
+      collect: ["case_id", "email"]
+      otp_required: false
+
+    - name: "escalate"
+      when: ["escalate", "manager", "supervisor", "human"]
+      tool: "escalate.transfer"
+      collect: []
+      otp_required: true

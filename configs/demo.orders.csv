@@ -1,0 +1,7 @@
+order_id,customer_email,status,eta,tracking_url,address,phone
+ORD-001,john.doe@email.com,shipped,2024-01-15,https://track.acme.com/ORD-001,"123 Main St, Anytown, CA 90210",+1-555-0123
+ORD-002,jane.smith@email.com,processing,2024-01-18,,"456 Oak Ave, Somewhere, NY 10001",+1-555-0456
+ORD-003,bob.wilson@email.com,delivered,,,"789 Pine Rd, Elsewhere, TX 75001",+1-555-0789
+ORD-004,alice.brown@email.com,shipped,2024-01-16,https://track.acme.com/ORD-004,"321 Elm St, Nowhere, FL 33101",+1-555-0321
+ORD-005,charlie.davis@email.com,cancelled,,,"654 Maple Dr, Anywhere, WA 98001",+1-555-0654
+ORD-006,diana.miller@email.com,processing,2024-01-20,,"987 Cedar Ln, Someplace, OR 97001",+1-555-0987
