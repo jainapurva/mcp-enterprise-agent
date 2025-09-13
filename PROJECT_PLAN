@@ -1,0 +1,228 @@
+# Project Plan — Config-Driven Enterprise MCP Voice Agent
+
+This document describes the 1.5-day hackathon build plan for our project.  
+It includes scope, architecture, phases, tasks, sponsor integrations, and demo script.  
+The project will be deployed on GitHub and integrates with sponsor products.
+
+---
+
+## 📌 Scope (MVP)
+
+- **MCP server** exposing generic tools:
+  - `kb.search`, `resource.query`, `case.create/lookup/update`
+  - `identity.verify`, `notify.send`, `escalate.transfer`
+- **Config-driven** (no industry lock-ins): policy, KB, resources (REST/CSV/SQL later), routing.
+- **Voice** via **Vapi** (ingress, ASR/TTS).
+- **Data & realtime** via **Convex** (cases, OTP, live triggers).
+- **Auth** via **WorkOS** (Admin UI & protected endpoints).
+- **Email/SMS** via **Google Lab** (email) and **Vapi** (SMS fallback).
+- **Deploy** via **Smithery** (container build + app deploy).
+- **Search UX** with **LiquidMetal** (admin KB/resource fuzzy search).
+
+---
+
+## 🏗️ Repo Blueprint
+mcp-enterprise-agent/
+├─ apps/
+│ ├─ mcp_server/ # MCP HTTP interface
+│ ├─ orchestrator/ # Routing + voice webhooks
+│ └─ admin_ui/ # React/Vite console
+├─ packages/
+│ ├─ core/ # config schema/loader, jsonpath, types
+│ ├─ adapters/ # rest, csv
+│ └─ tools/ # kb.search, resource.query, case.*, verify, notify, escalate
+├─ infra/
+│ ├─ convex/ # schema + functions (cases, otp, sessions)
+│ ├─ smithery/ # deploy spec
+│ ├─ docker/ # Dockerfiles
+│ └─ github/ # CI workflows
+├─ configs/
+│ ├─ example.config.yaml
+│ ├─ demo.orders.csv
+│ └─ demo.cases.csv
+├─ scripts/ # smoke tests, seeders
+├─ .env.example
+└─ README.md
+
+
+---
+
+## ⏱ Timeline (≈ 28 hours total)
+
+### Phase 0 — Bootstrap (0:45)
+- [ ] Initialize monorepo (pnpm or npm workspaces), TypeScript configs.
+- [ ] Install ESLint, Prettier, Vitest/Jest.
+- [ ] Create base folders & empty modules that compile.
+
+### Phase 1 — Configuration & Contracts (0:45 → 4:00)
+- [ ] Define `config.schema.ts` with Zod schema.
+- [ ] Implement `loadConfig()` with validation.
+- [ ] Create `jsonpath.ts` wrapper.
+- [ ] Provide `example.config.yaml` with KB + CSV resource.
+- [ ] Write unit tests (valid/invalid configs, JSONPath mapping).
+
+### Phase 2 — Adapters & Tools (4:00 → 10:00)
+**Adapters**
+- [ ] REST adapter (`rest.adapter.ts`): templating, query, timeout, error normalize.
+- [ ] CSV adapter (`csv.adapter.ts`): filter + append modes.
+
+**Tools**
+- [ ] `kb.search`: RAG over docs (Google Lab embeddings + LiquidMetal prefilter).
+- [ ] `resource.query`: Resolve resource/operation → adapter → JSONPath map.
+- [ ] `case.create/lookup/update`: Convex tables (`cases`, `sessions`).
+- [ ] `identity.verify`: OTP in Convex + email via Google Lab.
+- [ ] `notify.send`: Email via Google Lab; SMS via Vapi.
+- [ ] `escalate.transfer`: Escalation number from config.
+- [ ] Unit tests for all tools & adapters.
+
+### Phase 3 — MCP Server & Orchestrator (10:00 → 16:00)
+**MCP Server**
+- [ ] `POST /mcp/tools/list` and `POST /mcp/tool/:name/call`.
+- [ ] PII masking in logs.
+- [ ] Hot-reload endpoint `/admin/reload-config`.
+- [ ] WorkOS auth middleware.
+- [ ] Health endpoints.
+
+**Orchestrator**
+- [ ] `/orchestrate` route: keyword → tool (from config).
+- [ ] Enforce OTP for sensitive intents.
+- [ ] Optional: small LLM slot fill.
+- [ ] Integration tests (FAQ, status lookup, OTP action).
+
+### Phase 4 — Voice + Realtime + Admin (16:00 → 22:00)
+- [ ] Vapi webhook: transcripts → orchestrator → TTS back.
+- [ ] Persist sessions in Convex.
+- [ ] Convex realtime: `cases.updateStatus` → webhook → `notify.send`.
+- [ ] Admin UI:
+  - [ ] WorkOS login.
+  - [ ] `/config` upload & view.
+  - [ ] `/sessions` list + logs.
+  - [ ] `/demo` buttons (flip case, send OTP test).
+  - [ ] LiquidMetal search across KB/resources.
+  - [ ] Deploy UI via Google Lab (or Smithery static).
+
+### Phase 5 — CI/CD, Deploy, Demo Polish (22:00 → 28:00)
+- [ ] GitHub Actions CI (typecheck, lint, test, build).
+- [ ] Dockerfiles for MCP server + orchestrator.
+- [ ] Smithery deploy spec (with env vars).
+- [ ] Smoke tests (`scripts/smoke.ts`).
+- [ ] README quickstart, architecture diagram, sponsor callouts.
+- [ ] Record backup demo.
+
+---
+
+## 🛠️ Task Backlog (Atomic)
+
+### Core & Config
+- [ ] `config.schema.ts` with types.
+- [ ] `loadConfig()` + tests.
+- [ ] `jsonpath.ts: mapFields(payload, mapping)` + tests.
+- [ ] Example config file with policy, KB, CSV.
+
+### Adapters
+- [ ] REST adapter (templating, query, JSON body, timeout).
+- [ ] CSV adapter (filter, append, ID autogen).
+- [ ] Tests for adapters.
+
+### Tools
+- [ ] Define Zod schemas for tool IO.
+- [ ] Implement `kb.search` (embeddings + LiquidMetal).
+- [ ] Implement `resource.query`.
+- [ ] Implement `case.create/lookup/update`.
+- [ ] Implement `identity.verify` (Convex + Google Lab).
+- [ ] Implement `notify.send` (email + SMS).
+- [ ] Implement `escalate.transfer`.
+- [ ] Unit tests for all tools.
+
+### MCP Server
+- [ ] Implement `/mcp/tools/list` and `/mcp/tool/:name/call`.
+- [ ] Add PII masking middleware.
+- [ ] Add `/admin/reload-config`.
+- [ ] Add WorkOS auth guard.
+- [ ] Health endpoints.
+
+### Orchestrator
+- [ ] Implement `/orchestrate` routing (keyword-based).
+- [ ] Enforce OTP rules.
+- [ ] Optional LLM slot filling.
+- [ ] Integration tests for flows.
+
+### Voice & Realtime
+- [ ] Vapi voice webhook.
+- [ ] Session persistence in Convex.
+- [ ] Convex status update → webhook → notify.send.
+
+### Admin UI
+- [ ] WorkOS login.
+- [ ] Config upload + parse preview.
+- [ ] Sessions list + logs.
+- [ ] Demo buttons (flip case, OTP test).
+- [ ] LiquidMetal search.
+- [ ] Simple deploy (Google Lab or Smithery).
+
+### CI/CD & Deploy
+- [ ] GitHub Actions CI workflow.
+- [ ] Dockerfiles for MCP + Orchestrator.
+- [ ] Smithery deploy spec.
+- [ ] Post-deploy smoke test.
+
+### Demo & Docs
+- [ ] Seed CSVs (orders, cases).
+- [ ] `scripts/smoke.ts` calls per tool.
+- [ ] README: setup, run, demo script, sponsor usage.
+- [ ] Record backup demo.
+
+---
+
+## 📄 Example Config (trimmed)
+
+```yaml
+company:
+  name: "Acme Corp"
+  languages: ["en-US"]
+  voice_style: "friendly, concise"
+
+policy:
+  pii_collect: ["email", "order_id"]
+  pii_mask_in_logs: ["email"]
+  otp_required_for: ["address_change"]
+  confidence_threshold: 0.6
+  escalation:
+    strategy: "warm_transfer"
+    phone_number: "+14155550101"
+
+knowledge_base:
+  docs:
+    - title: "Support Hours"
+      text: "We operate Mon–Fri, 8am–6pm PT. Emergencies 24/7."
+
+resources:
+  - name: "orders"
+    type: "csv"
+    source: "./configs/demo.orders.csv"
+    operations:
+      lookup:
+        mode: "filter"
+        by: ["order_id"]
+        map:
+          status: "$.status"
+          eta: "$.eta"
+          tracking_url: "$.tracking_url"
+
+routing:
+  intents:
+    - name: "faq"
+      when: ["hours", "policy", "help", "support"]
+      tool: "kb.search"
+    - name: "order_status"
+      when: ["order", "status", "track"]
+      tool: "resource.query"
+      with: { resource: "orders", operation: "lookup" }
+      collect: ["order_id"]
+      otp_required: false
+    - name: "change_address"
+      when: ["address", "change"]
+      tool: "resource.query"
+      with: { resource: "orders", operation: "update" }
+      collect: ["email","order_id"]
+      otp_required: true
